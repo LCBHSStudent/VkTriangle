@@ -1,0 +1,9 @@
+﻿  Main.cpp
+  VkApp.cpp
+LINK : warning LNK4098: 默认库“MSVCRT”与其他库的使用冲突；请使用 /NODEFAULTLIB:library
+  正在生成代码
+  4 of 968 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
+  已完成代码的生成
+  VkForVs.vcxproj -> A:\WorkSpace\CppProject\VkForVs\x64\Release\VkForVs.exe
