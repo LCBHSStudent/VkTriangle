@@ -33,6 +33,8 @@ public:
 	virtual void Run();
 	bool         isDeviceSuitable(VkPhysicalDevice);
 
+	static const size_t MAX_FRAMES_IN_FLIGHT = 2;
+
 private:
 	int  _InitVulkan();
 	int  _InitWindow();
@@ -52,7 +54,8 @@ private:
 	void _CreateCommandPool();
 	void _CreateGraphicsPipeline();
 	void _CreateCommandBuffers();
-	void _CreateSemaphores();
+	void _CreateSyncObjects();
+	void _CreateSemaphores();			//废弃,改用上面的SyncObjCreateFunc
 
 	VkShaderModule
 		_CreateShaderModule(const std::vector<char>&);
@@ -112,9 +115,15 @@ private:
 	std::vector<VkFramebuffer> swapChainFrameBuffers;
 
 	std::vector<VkCommandBuffer> m_commandBuffers;
+	//--------------------------------------------------
+	//---------------Frames related---------------------
+	std::vector<VkSemaphore> imageAvailableSemaphores;
+	std::vector<VkSemaphore> renderFinishedSemaphores;
+	std::vector<VkFence>     inFlightFences;
+	size_t					 m_curFrame = 0;
+	//--------------------------------------------------
+	//--------------------------------------------------
 
-	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore renderFinishedSemaphore;
 
 	// --some configs-- //
 	const std::vector<const char*> validationLayers = {

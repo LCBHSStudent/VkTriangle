@@ -91,7 +91,7 @@ int VkApp::_InitVulkan() {
 	_CreateFramebuffers();
 	_CreateCommandPool();
 	_CreateCommandBuffers();
-	_CreateSemaphores();
+	_CreateSyncObjects();
 
 	return 0;
 }
@@ -682,6 +682,7 @@ void VkApp::_CreateGraphicsPipeline() {
 }
 
 void VkApp::_CreateCommandBuffers() {
+
 	m_commandBuffers.resize(swapChainFrameBuffers.size());
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -744,24 +745,62 @@ void VkApp::_CreateCommandBuffers() {
 
 }
 
-void VkApp::_CreateSemaphores() {
+void VkApp::_CreateSyncObjects() {
+	
+	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+
+	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType =
 		VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	if (vkCreateSemaphore(
-		m_device,
-		&semaphoreInfo,
-		nullptr,
-		&imageAvailableSemaphore
-	) != VK_SUCCESS ||
-		vkCreateSemaphore(
-			m_device,
-			&semaphoreInfo,
-			nullptr,
-			&renderFinishedSemaphore
-	) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create semaphores");
+
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType =
+		VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags =
+		VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		if (vkCreateSemaphore(
+				m_device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]
+			) != VK_SUCCESS ||
+			vkCreateSemaphore(
+				m_device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]
+			) != VK_SUCCESS ||
+			vkCreateFence(
+				m_device, &fenceInfo, nullptr, &inFlightFences[i]
+			) != VK_SUCCESS
+		) {
+			throw std::runtime_error("failed to create "
+				"synchronization objects for a frame");
+		}
 	}
+
+}
+
+void VkApp::_CreateSemaphores() {
+
+	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkSemaphoreCreateInfo semaphoreInfo = {};
+	semaphoreInfo.sType =
+		VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		if (vkCreateSemaphore(
+				m_device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]
+			) != VK_SUCCESS ||
+			vkCreateSemaphore(
+				m_device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]
+			) != VK_SUCCESS
+		) {
+			throw std::runtime_error("failed to create semaphores for a frame");
+		}
+	}
+
 }
 
 VkShaderModule VkApp::_CreateShaderModule(
@@ -938,18 +977,28 @@ int VkApp::_exec() {
 }
 
 void VkApp::_drawFrame() {
+
+	// 使用栅栏缓冲来等待执行完毕
+	vkWaitForFences (
+		m_device, 1, &inFlightFences[m_curFrame],
+		VK_TRUE, std::numeric_limits<uint64_t>::max()
+	);
+	vkResetFences(
+		m_device, 1, &inFlightFences[m_curFrame]
+	);
+
 	// 获取帧图像对象
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(
 		m_device, m_swapChain, std::numeric_limits<uint64_t>::max(),
-		imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex
+		imageAvailableSemaphores[m_curFrame], VK_NULL_HANDLE, &imageIndex
 	);
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 	VkSemaphore waitSemaphores[] = {
-		imageAvailableSemaphore
+		imageAvailableSemaphores[m_curFrame]
 	};
 	VkPipelineStageFlags waitStages[] = {
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
@@ -962,13 +1011,13 @@ void VkApp::_drawFrame() {
 	submitInfo.pCommandBuffers = &m_commandBuffers[imageIndex];
 
 	VkSemaphore signalSemaphores[] = {
-		renderFinishedSemaphore
+		renderFinishedSemaphores[m_curFrame]
 	};
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
 	if (vkQueueSubmit(
-		m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE
+		m_graphicsQueue, 1, &submitInfo, inFlightFences[m_curFrame]
 	) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer");
 	}
@@ -988,6 +1037,9 @@ void VkApp::_drawFrame() {
 		m_presentQueue,
 		&presentInfo
 	);
+
+	m_curFrame = (m_curFrame + 1) & MAX_FRAMES_IN_FLIGHT;
+
 }
 
 int VkApp::_CleanUp() {
@@ -1006,9 +1058,12 @@ int VkApp::_CleanUp() {
 	}
 #endif
 
-	vkDestroySemaphore(m_device, renderFinishedSemaphore, nullptr);
-	vkDestroySemaphore(m_device, imageAvailableSemaphore, nullptr);
-
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		vkDestroySemaphore(m_device, imageAvailableSemaphores[i], nullptr);
+		vkDestroySemaphore(m_device, renderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(m_device, inFlightFences[i], nullptr);
+	}
+	
 	vkDestroyCommandPool(m_device, m_commandPool, nullptr);
 
 	for (auto framebuffer : swapChainFrameBuffers) {
