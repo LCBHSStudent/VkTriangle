@@ -1,7 +1,7 @@
 ﻿  VkApp.cpp
 LINK : warning LNK4098: 默认库“MSVCRT”与其他库的使用冲突；请使用 /NODEFAULTLIB:library
   正在生成代码
-  0 of 968 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+  4 of 1053 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     0 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成

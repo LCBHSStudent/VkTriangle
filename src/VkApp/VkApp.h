@@ -5,26 +5,41 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
+#include <glm/glm.hpp>
 #include <vector>
+#include <array>
 
-struct QueueFamilyIndices {
-	int graphicsFamily = -1;
-	int presentFamily  = -1;
+struct Vertex {
+	glm::vec2 pos;
+	glm::vec3 color;
+//-------------------明天注意下这块-----------------------------
+	static VkVertexInputBindingDescription getBindingDescription() {
+		VkVertexInputBindingDescription bindingDescription = {};
+		bindingDescription.binding = 0;
+		bindingDescription.stride = sizeof(Vertex);
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-	bool isComplete() {
-		return graphicsFamily >= 0 &&
-			presentFamily >= 0;
+		return bindingDescription;
 	}
-};
 
-struct SwapChainSupportDetails {
+	static std::array<VkVertexInputAttributeDescription, 2> 
+		getAttributeDescriptions() {
+		
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
 
-	VkSurfaceCapabilitiesKHR capabilities;
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].location = 0;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR>	presentModes;
+		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[1].location = 1;
+		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+		return attributeDescriptions;
+	}
+//----------------------------------------------------//
 };
 
 class VkApp {
@@ -33,25 +48,48 @@ public:
 	virtual void Run();
 	bool         isDeviceSuitable(VkPhysicalDevice);
 
+	static void  framebufferResizeCallback(GLFWwindow*, int, int);
+	static void  getBindingDescription();
+
 	static const size_t MAX_FRAMES_IN_FLIGHT = 2;
+
+	static struct QueueFamilyIndices {
+		int graphicsFamily = -1;
+		int presentFamily = -1;
+
+		bool isComplete() {
+			return graphicsFamily >= 0 &&
+				presentFamily >= 0;
+		}
+	};
+
+	static struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR capabilities;
+
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR>	presentModes;
+	};
 
 private:
 	int  _InitVulkan();
 	int  _InitWindow();
 	int  _CleanUp();
+	void _cleanUpSwapChain();
 	int  _exec();
 	void _drawFrame();
+	void _resetSwapChain();
 
     int  _CreateInstance();
 	void _SetupDebugCallback();
 	void _PickPhysicalDevice();
 	void _CreateLogicalDevice();
 	void _CreateSurface();
-	void _CreateSwapChain();
+	void _CreateSwapChain();			//需要在窗口大小被改变的时候调用
 	void _CreateImageViews();
 	void _CreateRenderPass();
 	void _CreateFramebuffers();
 	void _CreateCommandPool();
+	void _CreateVertexBuffers();
 	void _CreateGraphicsPipeline();
 	void _CreateCommandBuffers();
 	void _CreateSyncObjects();
@@ -69,6 +107,9 @@ private:
 
 	QueueFamilyIndices
 		findQueueFamilies(VkPhysicalDevice device);
+
+	uint32_t findMemoryType(uint32_t typeFilter,
+		VkMemoryPropertyFlags properties);
 
 	SwapChainSupportDetails
 		querySwapChainSupport(VkPhysicalDevice device);
@@ -89,10 +130,10 @@ private:
 	VkExtent2D chooseSwapExtent(
 		const VkSurfaceCapabilitiesKHR&);
 
-
-	GLFWwindow*				 m_window     = nullptr;
+	GLFWwindow*				 m_window;
 	static const int		 W_WIDTH	  = 800;
 	static const int		 W_HEIGHT	  = 600;
+	bool                     frameBufferResized  = false;
 	VkInstance				 m_instance			 {};
 	VkPhysicalDevice		 m_gpu				 {};
 	VkDevice				 m_device			 {};
@@ -108,6 +149,8 @@ private:
 	VkRenderPass             m_renderPass        {};
 	VkPipeline               m_graphicsPipeline  {};
 
+	VkBuffer				 m_vertexBuffer      {};
+	VkDeviceMemory           m_vertexBufferMemory{};
 	VkCommandPool			 m_commandPool       {};
 
 	std::vector<VkImage> swapChainImages;
@@ -120,10 +163,10 @@ private:
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence>     inFlightFences;
+	std::vector<VkFence>	 imagesInFlight;
 	size_t					 m_curFrame = 0;
 	//--------------------------------------------------
 	//--------------------------------------------------
-
 
 	// --some configs-- //
 	const std::vector<const char*> validationLayers = {
@@ -132,6 +175,14 @@ private:
 	const std::vector<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	}; 
+
+	//--------------Vertex data-------------------//
+	const std::vector<Vertex> vertices = {
+		{{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
+		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	};
+	//--------------------------------------------//
 
 #ifdef _DEBUG
 	VkDebugUtilsMessengerEXT m_callback{};
