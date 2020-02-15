@@ -78,6 +78,18 @@ private:
 	int  _exec();
 	void _drawFrame();
 	void _resetSwapChain();
+	
+	void _createBuffer(
+		VkDeviceSize size, VkBufferUsageFlags usage,
+		VkMemoryPropertyFlags properties,
+		VkBuffer& buffer,
+		VkDeviceMemory& bufferMemory
+	);
+	void _copyBuffer (
+		VkBuffer srcBuffer,
+		VkBuffer dstBuffer,
+		VkDeviceSize size
+	);
 
     int  _CreateInstance();
 	void _SetupDebugCallback();
@@ -89,7 +101,10 @@ private:
 	void _CreateRenderPass();
 	void _CreateFramebuffers();
 	void _CreateCommandPool();
+	
 	void _CreateVertexBuffers();
+	void _CreateIndicesBuffer();
+
 	void _CreateGraphicsPipeline();
 	void _CreateCommandBuffers();
 	void _CreateSyncObjects();
@@ -178,11 +193,18 @@ private:
 
 	//--------------Vertex data-------------------//
 	const std::vector<Vertex> vertices = {
-		{{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f},  {0.0f, 1.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 	};
+	const std::vector<uint16_t> indices = {
+		0, 1, 2, 2, 3, 0
+	};
+	VkBuffer	   m_indicesBuffer;
+	VkDeviceMemory m_indicesBufferMemory;
 	//--------------------------------------------//
+
 
 #ifdef _DEBUG
 	VkDebugUtilsMessengerEXT m_callback{};
