@@ -2,11 +2,17 @@
 /* Created by LCBHSStudent */
 /*       2020 Feb 3rd      */
 
-#include <set>
 #include "VkApp.h"
+#include "../LCBHSS/lcbhss_space.h"
+
+#include <set>
+#include <chrono>
 #include <algorithm>
 #include <exception>
-#include "../LCBHSS/lcbhss_space.h"
+
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 void VkApp::Run() {
 #ifdef _DEBUG
@@ -87,7 +93,10 @@ int VkApp::_InitVulkan() {
 	_CreateSwapChain();
 	_CreateImageViews();
 	_CreateRenderPass();
+
+	_CreateDescriptorSetLayout();		//描述符集布局
 	_CreateGraphicsPipeline();
+
 	_CreateFramebuffers();
 	_CreateCommandPool();
 
@@ -124,7 +133,7 @@ void VkApp::_SetupDebugCallback() {
 	}
 }
 
-VkApp::QueueFamilyIndices VkApp::findQueueFamilies(VkPhysicalDevice device) {
+QueueFamilyIndices VkApp::findQueueFamilies(VkPhysicalDevice device) {
 	QueueFamilyIndices indices;
 
 	uint32_t queueFamilyCount = 0;
@@ -602,6 +611,51 @@ void VkApp::_CreateIndicesBuffer() {
 
 }
 
+void VkApp::_CreateUniformBuffers() {
+	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+	m_uniformBuffers.resize(swapChainImages.size());
+	m_uniformBuffersMemory.resize(swapChainImages.size());
+
+	for (size_t i = 0; i < swapChainImages.size(); i++) {
+		_createBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			m_uniformBuffers[i],
+			m_uniformBuffersMemory[i]
+		);
+	}
+}
+
+void VkApp::_CreateDescriptorSetLayout() {
+	VkDescriptorSetLayoutBinding uboLayoutBingding = {};
+	{
+		uboLayoutBingding.binding = 0; //对应的顶点着色器中的参数
+		uboLayoutBingding.descriptorType =
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBingding.descriptorCount = 1;
+
+		uboLayoutBingding.stageFlags =
+			VK_SHADER_STAGE_VERTEX_BIT;
+		uboLayoutBingding.pImmutableSamplers = nullptr; //用于图像采样相关的描述符
+
+	}
+	VkDescriptorSetLayoutCreateInfo createInfo = {};
+	createInfo.sType =
+		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	createInfo.bindingCount = 1;
+	createInfo.pBindings = &uboLayoutBingding;
+
+	if (vkCreateDescriptorSetLayout(
+		m_device, &createInfo, nullptr, &m_descripSetLayout
+	) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor set layout");
+	}
+
+}
+
 void VkApp::_CreateGraphicsPipeline() {
 
 	auto vertShaderCode = readFile(
@@ -751,8 +805,8 @@ void VkApp::_CreateGraphicsPipeline() {
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType =
 		VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &m_descripSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -1224,6 +1278,7 @@ void VkApp::_drawFrame() {
 		result == VK_SUBOPTIMAL_KHR ||
 		frameBufferResized
 	) {
+		_updateUniformBuffer(imageIndex);
 		{
 			VkSubmitInfo submitInfo = {};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1387,6 +1442,17 @@ int VkApp::_CleanUp() {
 	
 	_cleanUpSwapChain();
 
+	vkDestroyDescriptorSetLayout(m_device, m_descripSetLayout, nullptr);
+
+	for (size_t i = 0; i < swapChainImages.size(); i++) {
+		vkDestroyBuffer(
+			m_device, m_uniformBuffers[i], nullptr
+		);
+		vkFreeMemory(
+			m_device, m_uniformBuffersMemory[i], nullptr
+		);
+	}
+
 	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
 	vkDestroyBuffer(m_device, m_indicesBuffer, nullptr);
 	vkFreeMemory(m_device, m_vertexBufferMemory, nullptr);
@@ -1415,6 +1481,51 @@ int VkApp::_CleanUp() {
 	}
 
 	return 0;
+}
+
+
+void VkApp::_updateUniformBuffer(uint32_t currentImage) {
+	
+	static auto startTime = std::chrono::high_resolution_clock
+		::now();
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	float time =
+		std::chrono::duration<float, std::chrono::seconds::period> 
+			(currentTime - startTime).count();
+	
+	UniformBufferObject ubo = {};
+	// 按Z轴旋转Time弧度
+	// rotate 矩阵 旋转角度 旋转轴 glm::mat4(1.0f) => 单位矩阵
+	ubo.model = glm::rotate(glm::mat4(1.0f),
+		time * glm::radians(90.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f)
+	);
+	// lookAt 观察者位置 视点坐标 向上向量为参数 视图变换矩阵
+	ubo.view = glm::lookAt(
+		glm::vec3(2.0f, 2.0f, 2.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f)
+	);
+	// 透视变换矩阵 视域的垂直角度，视域的宽高比 进平面远平面的距离
+	ubo.proj = glm::perspective(
+		glm::radians(45.0f),
+		swapChainExtent.width / (float)swapChainExtent.height,
+		1.0f, 10.0f
+	);
+	// GLM--OpenGL 与 vulkan的Y轴是相反的，所以*-1？
+	ubo.proj[1][1] *= -1;
+
+	void* data;
+	vkMapMemory(
+		m_device, m_uniformBuffersMemory[currentImage],
+		0, sizeof(ubo), 0, &data
+	);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(
+		m_device,
+		m_uniformBuffersMemory[currentImage]
+	);
+
 }
 
 std::vector<const char*> VkApp::_GetRequiredExtensions() {

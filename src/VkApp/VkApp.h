@@ -42,6 +42,22 @@ struct Vertex {
 //----------------------------------------------------//
 };
 
+static struct QueueFamilyIndices {
+	int graphicsFamily = -1;
+	int presentFamily = -1;
+
+	bool isComplete() {
+		return graphicsFamily >= 0 &&
+			presentFamily >= 0;
+	}
+};
+
+struct UniformBufferObject {
+	glm::mat4		model;
+	glm::mat4		view;
+	glm::mat4		proj;
+};
+
 class VkApp {
 public:
 	explicit	 VkApp() = default;
@@ -53,16 +69,6 @@ public:
 
 	static const size_t MAX_FRAMES_IN_FLIGHT = 2;
 
-	static struct QueueFamilyIndices {
-		int graphicsFamily = -1;
-		int presentFamily = -1;
-
-		bool isComplete() {
-			return graphicsFamily >= 0 &&
-				presentFamily >= 0;
-		}
-	};
-
 	static struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
 
@@ -71,13 +77,15 @@ public:
 	};
 
 private:
+	int  _exec();
 	int  _InitVulkan();
 	int  _InitWindow();
-	int  _CleanUp();
-	void _cleanUpSwapChain();
-	int  _exec();
 	void _drawFrame();
+	int  _CleanUp();
+
+	void _cleanUpSwapChain();
 	void _resetSwapChain();
+	void _updateUniformBuffer(uint32_t currentImage);
 	
 	void _createBuffer(
 		VkDeviceSize size, VkBufferUsageFlags usage,
@@ -104,7 +112,9 @@ private:
 	
 	void _CreateVertexBuffers();
 	void _CreateIndicesBuffer();
+	void _CreateUniformBuffers();
 
+	void _CreateDescriptorSetLayout();
 	void _CreateGraphicsPipeline();
 	void _CreateCommandBuffers();
 	void _CreateSyncObjects();
@@ -160,6 +170,7 @@ private:
 	VkFormat				 swapChainImageFormat{};
 	VkExtent2D				 swapChainExtent	 {};
 
+	VkDescriptorSetLayout    m_descripSetLayout  {};
 	VkPipelineLayout         m_pipelineLayout	 {};
 	VkRenderPass             m_renderPass        {};
 	VkPipeline               m_graphicsPipeline  {};
@@ -174,7 +185,7 @@ private:
 
 	std::vector<VkCommandBuffer> m_commandBuffers;
 	//--------------------------------------------------
-	//---------------Frames related---------------------
+	//-----------------Sync related---------------------
 	std::vector<VkSemaphore> imageAvailableSemaphores;
 	std::vector<VkSemaphore> renderFinishedSemaphores;
 	std::vector<VkFence>     inFlightFences;
@@ -203,6 +214,9 @@ private:
 	};
 	VkBuffer	   m_indicesBuffer;
 	VkDeviceMemory m_indicesBufferMemory;
+
+	std::vector<VkBuffer> m_uniformBuffers;
+	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 	//--------------------------------------------//
 
 

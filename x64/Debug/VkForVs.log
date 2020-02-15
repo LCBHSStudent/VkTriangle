@@ -1,8 +1,9 @@
 ﻿  Main.cpp
-A:\WorkSpace\CppProject\VkForVs\VkForVs\src\VkApp\VkApp.h(64): warning C4091: “static ”: 没有声明变量时忽略“VkApp::QueueFamilyIndices”的左侧
-A:\WorkSpace\CppProject\VkForVs\VkForVs\src\VkApp\VkApp.h(71): warning C4091: “static ”: 没有声明变量时忽略“VkApp::SwapChainSupportDetails”的左侧
+A:\WorkSpace\CppProject\VkForVs\VkForVs\src\VkApp\VkApp.h(53,2): warning C4091: “static ”: 没有声明变量时忽略“QueueFamilyIndices”的左侧
+A:\WorkSpace\CppProject\VkForVs\VkForVs\src\VkApp\VkApp.h(77): warning C4091: “static ”: 没有声明变量时忽略“VkApp::SwapChainSupportDetails”的左侧
   VkApp.cpp
-A:\WorkSpace\CppProject\VkForVs\VkForVs\src\VkApp\VkApp.h(64): warning C4091: “static ”: 没有声明变量时忽略“VkApp::QueueFamilyIndices”的左侧
-A:\WorkSpace\CppProject\VkForVs\VkForVs\src\VkApp\VkApp.h(71): warning C4091: “static ”: 没有声明变量时忽略“VkApp::SwapChainSupportDetails”的左侧
+A:\WorkSpace\CppProject\VkForVs\VkForVs\src\VkApp\VkApp.h(53,2): warning C4091: “static ”: 没有声明变量时忽略“QueueFamilyIndices”的左侧
+A:\WorkSpace\CppProject\VkForVs\VkForVs\src\VkApp\VkApp.h(77): warning C4091: “static ”: 没有声明变量时忽略“VkApp::SwapChainSupportDetails”的左侧
   正在生成代码...
+LINK : warning LNK4098: 默认库“MSVCRT”与其他库的使用冲突；请使用 /NODEFAULTLIB:library
   VkForVs.vcxproj -> A:\WorkSpace\CppProject\VkForVs\x64\Debug\VkForVs.exe
