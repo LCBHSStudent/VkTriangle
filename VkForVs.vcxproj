@@ -95,7 +95,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>A:\Depending\boost_1_72_0;A:\Depending\glfw-3.3.bin.WIN64\include;A:\Depending\glm;A:\Depending\SDL2-2.0.10\x86_64-w64-mingw32\include;A:\Depending\VulkanSDK\1.1.126.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>A:\Depending\stb;A:\Depending\boost_1_72_0;A:\Depending\glfw-3.3.bin.WIN64\include;A:\Depending\glm;A:\Depending\SDL2-2.0.10\x86_64-w64-mingw32\include;A:\Depending\VulkanSDK\1.1.126.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -113,7 +113,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>A:\Depending\boost_1_72_0;A:\Depending\glfw-3.3.bin.WIN64\include;A:\Depending\glm;A:\Depending\SDL2-2.0.10\x86_64-w64-mingw32\include;A:\Depending\VulkanSDK\1.1.126.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>A:\Depending\stb;A:\Depending\boost_1_72_0;A:\Depending\glfw-3.3.bin.WIN64\include;A:\Depending\glm;A:\Depending\SDL2-2.0.10\x86_64-w64-mingw32\include;A:\Depending\VulkanSDK\1.1.126.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -133,7 +133,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>A:\Depending\boost_1_72_0;A:\Depending\glfw-3.3.bin.WIN64\include;A:\Depending\glm;A:\Depending\SDL2-2.0.10\x86_64-w64-mingw32\include;A:\Depending\VulkanSDK\1.1.126.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>A:\Depending\stb;A:\Depending\boost_1_72_0;A:\Depending\glfw-3.3.bin.WIN64\include;A:\Depending\glm;A:\Depending\SDL2-2.0.10\x86_64-w64-mingw32\include;A:\Depending\VulkanSDK\1.1.126.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -155,7 +155,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>A:\Depending\boost_1_72_0;A:\Depending\glfw-3.3.bin.WIN64\include;A:\Depending\glm;A:\Depending\SDL2-2.0.10\x86_64-w64-mingw32\include;A:\Depending\VulkanSDK\1.1.126.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>A:\Depending\stb;A:\Depending\boost_1_72_0;A:\Depending\glfw-3.3.bin.WIN64\include;A:\Depending\glm;A:\Depending\SDL2-2.0.10\x86_64-w64-mingw32\include;A:\Depending\VulkanSDK\1.1.126.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -172,11 +172,13 @@
   <ItemGroup>
     <ClCompile Include="src\LCBHSS\lcbhss_space.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\VkAppDependence\vk_depend.cpp" />
     <ClCompile Include="src\VkApp\VkApp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\LCBHSS\lcbhss_space.h" />
+    <ClInclude Include="src\VkAppDependence\vk_depend.h" />
     <ClInclude Include="src\VkApp\VkApp.h" />
   </ItemGroup>
   <ItemGroup>

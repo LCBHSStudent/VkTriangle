@@ -94,15 +94,16 @@ int VkApp::_InitVulkan() {
 	_CreateImageViews();
 	_CreateRenderPass();
 
+	
 	_CreateDescriptorSetLayout();		//描述符集布局
 	_CreateGraphicsPipeline();
-
 	_CreateFramebuffers();
 	_CreateCommandPool();
-
 	_CreateVertexBuffers();
 	_CreateIndicesBuffer();
-
+	_CreateUniformBuffers();
+	_CreateDescriptorPool();
+	_CreateDescriptorSets();
 	_CreateCommandBuffers();
 	_CreateSyncObjects();
 
@@ -185,7 +186,7 @@ uint32_t VkApp::findMemoryType(
 	throw std::runtime_error("failed to find suitable memory type");
 }
 
-VkApp::SwapChainSupportDetails VkApp::querySwapChainSupport(
+SwapChainSupportDetails VkApp::querySwapChainSupport(
 	VkPhysicalDevice device
 ) {
 	SwapChainSupportDetails details = {};
@@ -530,6 +531,75 @@ void VkApp::_CreateCommandPool() {
 
 }
 
+void VkApp::_CreateDescriptorSets() {
+
+	std::vector<VkDescriptorSetLayout>
+		layouts(swapChainImages.size(), m_descripSetLayout);
+	VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType =
+		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = m_descriptorPool;
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
+	allocInfo.pSetLayouts = layouts.data();
+
+	m_descriptorSets.resize(swapChainImages.size());
+	if (vkAllocateDescriptorSets(
+		m_device, &allocInfo, m_descriptorSets.data()
+	) != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate descriptor sets");
+	}
+
+	for (size_t i = 0; i < swapChainImages.size(); i++) {
+		VkDescriptorBufferInfo bufferInfo = {};
+		bufferInfo.buffer = m_uniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range  = sizeof(UniformBufferObject);
+
+		VkWriteDescriptorSet descriptorWrite = {};
+		descriptorWrite.sType =
+			VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = m_descriptorSets[i];
+		descriptorWrite.dstBinding = 0;				//Binding 也是index？
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType =
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount = 1;
+
+		descriptorWrite.pBufferInfo = &bufferInfo;
+		descriptorWrite.pImageInfo  = nullptr;
+		descriptorWrite.pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(
+			m_device, 1, &descriptorWrite, 0, nullptr
+		);
+	}
+
+}
+
+void VkApp::_CreateDescriptorPool() {
+	
+	VkDescriptorPoolSize poolSize = {};
+	poolSize.descriptorCount = static_cast<uint32_t>(
+		swapChainImages.size());
+	poolSize.type =
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	
+	VkDescriptorPoolCreateInfo createInfo = {};
+	createInfo.sType =
+		VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	createInfo.poolSizeCount = 1;
+	createInfo.pPoolSizes = &poolSize;
+	createInfo.maxSets = static_cast<uint32_t>(
+		swapChainImages.size());
+
+	if (vkCreateDescriptorPool(
+		m_device, &createInfo, nullptr, &m_descriptorPool
+	) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor pool");
+	}
+
+}
+
 void VkApp::_CreateVertexBuffers() {
 
 	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
@@ -751,7 +821,7 @@ void VkApp::_CreateGraphicsPipeline() {
 	// 表面剔除 
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	// 指定顺时针的顶点序是正面
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f;
@@ -911,6 +981,10 @@ void VkApp::_CreateCommandBuffers() {
 		//	size()个顶点  一个渲染实例（为1表示不进行实例渲染） firstVertex firstInstance
 		//											     	|||        |||
 		//                                          gl_VertexIndex gl_InstanceIndex
+		vkCmdBindDescriptorSets(m_commandBuffers[i],
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			m_pipelineLayout,
+			0, 1, &m_descriptorSets[i], 0, nullptr);
 		vkCmdDrawIndexed(
 			m_commandBuffers[i], static_cast<uint32_t>(
 				indices.size())
@@ -1278,7 +1352,7 @@ void VkApp::_drawFrame() {
 		result == VK_SUBOPTIMAL_KHR ||
 		frameBufferResized
 	) {
-		_updateUniformBuffer(imageIndex);
+		std::cerr << "window size changed, reset swap chain\n";
 		{
 			VkSubmitInfo submitInfo = {};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1309,6 +1383,8 @@ void VkApp::_drawFrame() {
 	else if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to acquire swap chain image");
 	}
+
+	_updateUniformBuffer(imageIndex);
 
 	if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
 		vkWaitForFences(m_device, 1, &imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
@@ -1442,6 +1518,7 @@ int VkApp::_CleanUp() {
 	
 	_cleanUpSwapChain();
 
+	vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(m_device, m_descripSetLayout, nullptr);
 
 	for (size_t i = 0; i < swapChainImages.size(); i++) {
@@ -1510,9 +1587,10 @@ void VkApp::_updateUniformBuffer(uint32_t currentImage) {
 	ubo.proj = glm::perspective(
 		glm::radians(45.0f),
 		swapChainExtent.width / (float)swapChainExtent.height,
-		1.0f, 10.0f
+		0.1f, 10.0f
 	);
 	// GLM--OpenGL 与 vulkan的Y轴是相反的，所以*-1？
+	// 但是注意这样做的话会使之前创建pipeline时设置的背面绘制此时变成顺时针，导致背面被剔除
 	ubo.proj[1][1] *= -1;
 
 	void* data;

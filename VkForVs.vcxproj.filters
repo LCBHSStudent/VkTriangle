@@ -24,6 +24,9 @@
     <ClCompile Include="src\LCBHSS\lcbhss_space.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\VkAppDependence\vk_depend.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\VkApp\VkApp.h">
@@ -33,6 +36,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\VkAppDependence\vk_depend.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

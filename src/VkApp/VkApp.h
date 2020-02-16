@@ -9,54 +9,7 @@
 #include <vector>
 #include <array>
 
-struct Vertex {
-	glm::vec2 pos;
-	glm::vec3 color;
-//-------------------明天注意下这块-----------------------------
-	static VkVertexInputBindingDescription getBindingDescription() {
-		VkVertexInputBindingDescription bindingDescription = {};
-		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(Vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-		return bindingDescription;
-	}
-
-	static std::array<VkVertexInputAttributeDescription, 2> 
-		getAttributeDescriptions() {
-		
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
-
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-		return attributeDescriptions;
-	}
-//----------------------------------------------------//
-};
-
-static struct QueueFamilyIndices {
-	int graphicsFamily = -1;
-	int presentFamily = -1;
-
-	bool isComplete() {
-		return graphicsFamily >= 0 &&
-			presentFamily >= 0;
-	}
-};
-
-struct UniformBufferObject {
-	glm::mat4		model;
-	glm::mat4		view;
-	glm::mat4		proj;
-};
+#include "../VkAppDependence/vk_depend.h"
 
 class VkApp {
 public:
@@ -68,13 +21,6 @@ public:
 	static void  getBindingDescription();
 
 	static const size_t MAX_FRAMES_IN_FLIGHT = 2;
-
-	static struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR>	presentModes;
-	};
 
 private:
 	int  _exec();
@@ -108,7 +54,11 @@ private:
 	void _CreateImageViews();
 	void _CreateRenderPass();
 	void _CreateFramebuffers();
+
 	void _CreateCommandPool();
+
+	void _CreateDescriptorSets();		// 描述符集
+	void _CreateDescriptorPool();
 	
 	void _CreateVertexBuffers();
 	void _CreateIndicesBuffer();
@@ -171,6 +121,10 @@ private:
 	VkExtent2D				 swapChainExtent	 {};
 
 	VkDescriptorSetLayout    m_descripSetLayout  {};
+	VkDescriptorPool		 m_descriptorPool{};
+	std::vector<VkDescriptorSet>
+							 m_descriptorSets    {};
+
 	VkPipelineLayout         m_pipelineLayout	 {};
 	VkRenderPass             m_renderPass        {};
 	VkPipeline               m_graphicsPipeline  {};
@@ -178,6 +132,7 @@ private:
 	VkBuffer				 m_vertexBuffer      {};
 	VkDeviceMemory           m_vertexBufferMemory{};
 	VkCommandPool			 m_commandPool       {};
+	
 
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
@@ -235,5 +190,4 @@ private:
 		const VkAllocationCallbacks* pAllocator
 	);
 #endif
-
 };
