@@ -56,6 +56,8 @@ private:
 	void _CreateFramebuffers();
 
 	void _CreateCommandPool();
+	void _CreateTextureImage();
+	void _CreateTextureSampler();
 
 	void _CreateDescriptorSets();		// 描述符集
 	void _CreateDescriptorPool();
@@ -69,7 +71,36 @@ private:
 	void _CreateCommandBuffers();
 	void _CreateSyncObjects();
 	void _CreateSemaphores();			//废弃,改用上面的SyncObjCreateFunc
+	
+	VkCommandBuffer
+		 beginSingleTimeCommands();
+	void endSingleTimeCommands(VkCommandBuffer);
 
+	void createImage(
+		uint32_t width, uint32_t height,
+		VkFormat format, VkImageTiling		tiling,
+		VkImageUsageFlags					usage,
+		VkMemoryPropertyFlags				properties,
+		VkImage&							image,
+		VkDeviceMemory&						imageMemory
+	);
+
+	void transitionImageLayout(
+		VkImage, VkFormat,
+		VkImageLayout						oldLayout,
+		VkImageLayout						newLayout
+	);
+
+	void copyBufferToImage(
+		VkBuffer							buffer,
+		VkImage								image,
+		uint32_t							width,
+		uint32_t							height
+	);
+
+	VkImageView
+		createImageView(VkImage, VkFormat);
+	
 	VkShaderModule
 		_CreateShaderModule(const std::vector<char>&);
 
@@ -83,7 +114,8 @@ private:
 	QueueFamilyIndices
 		findQueueFamilies(VkPhysicalDevice device);
 
-	uint32_t findMemoryType(uint32_t typeFilter,
+	uint32_t
+		findMemoryType(uint32_t typeFilter,
 		VkMemoryPropertyFlags properties);
 
 	SwapChainSupportDetails
@@ -133,6 +165,10 @@ private:
 	VkDeviceMemory           m_vertexBufferMemory{};
 	VkCommandPool			 m_commandPool       {};
 	
+	VkImage					 textureImage;
+	VkDeviceMemory			 textureImageMemory;
+	VkImageView				 textureImageView;
+	VkSampler				 textureSampler;
 
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
@@ -159,11 +195,13 @@ private:
 
 	//--------------Vertex data-------------------//
 	const std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, -0.5f},  {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, -0.5f},  {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
+	// update: 添加举行的四个顶点为纹理的坐标
+
 	const std::vector<uint16_t> indices = {
 		0, 1, 2, 2, 3, 0
 	};
