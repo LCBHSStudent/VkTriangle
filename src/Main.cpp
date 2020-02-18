@@ -8,7 +8,6 @@
 #include <exception>
 
 int main(int argc, char* argv[]) {
-
 	auto vkapp = new VkApp();
 	try {
 		vkapp->Run();

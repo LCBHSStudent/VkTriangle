@@ -42,8 +42,56 @@ void Log(
 const char* FormatLogMessage(
     const char* file, const char* function, int line);
 
-extern std::vector<char> readFile(const std::string & fileNmae);
+extern std::vector<char>
+    readFile(const std::string & fileNmae);
 
+template<typename T>
+void quickSort(
+    std::vector<T>&     _list,
+    bool                (*_cmpFun)(T,T) // ascending or descending
+) {
+    static std::vector<T> list = _list;
+    static bool(*cmpFun)(T,T)  = _cmpFun;
+
+    struct _swap {
+        void operator()(int a, int b) {
+            T temp  = list[a];
+            list[a] = list[b];
+            list[b] = temp;
+        }
+    } static swap;
+    struct _split {
+        uint32_t operator()(uint32_t low, uint32_t high) {
+
+            T key       = list[low];
+            uint32_t  i = low,
+                      j = high;
+
+            while (i < j) {
+                while (i < j &&
+                       cmpFun(list[j], key)
+                ) j--;
+                while (i < j &&
+                      !cmpFun(list[i], key)
+                ) i++;
+                swap(i, (i==j? low: j));
+            }
+            return i;
+        }
+    } static splict;
+    struct _qsort {
+        void operator()(uint32_t low, uint32_t heigh) {
+            if(low < heigh) {
+                uint32_t key = splict(low, heigh);
+                this->operator()(low, key - 1);
+                this->operator()(key+1, heigh);
+            }
+        }
+    } static qsort;
+
+    qsort(0, static_cast<uint32_t>(list.size()-1));
+    _list = list;
+}
 
 constexpr auto UNDEFINED_ERROR              = 100;
 constexpr auto UNHANDLED_ERROR              = 101;

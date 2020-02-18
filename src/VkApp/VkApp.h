@@ -54,6 +54,7 @@ private:
 	void _CreateImageViews();
 	void _CreateRenderPass();
 	void _CreateFramebuffers();
+	void _CreateDepthResources();
 
 	void _CreateCommandPool();
 	void _CreateTextureImage();
@@ -99,7 +100,7 @@ private:
 	);
 
 	VkImageView
-		createImageView(VkImage, VkFormat);
+		createImageView(VkImage, VkFormat, VkImageAspectFlags);
 	
 	VkShaderModule
 		_CreateShaderModule(const std::vector<char>&);
@@ -117,6 +118,10 @@ private:
 	uint32_t
 		findMemoryType(uint32_t typeFilter,
 		VkMemoryPropertyFlags properties);
+
+	VkFormat
+		findSupportedFormat(const std::vector<VkFormat>&,
+			VkImageTiling, VkFormatFeatureFlags);
 
 	SwapChainSupportDetails
 		querySwapChainSupport(VkPhysicalDevice device);
@@ -170,6 +175,10 @@ private:
 	VkImageView				 textureImageView;
 	VkSampler				 textureSampler;
 
+	VkImage					 depthImage;
+	VkDeviceMemory			 depthImageMemory;
+	VkImageView				 depthImageView;
+
 	std::vector<VkImage> swapChainImages;
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkFramebuffer> swapChainFrameBuffers;
@@ -195,15 +204,23 @@ private:
 
 	//--------------Vertex data-------------------//
 	const std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, -0.5f},  {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+		// Rectangle 1
+		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, -0.5f, 0.0f},  {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, 0.5f, 0.0f},   {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, 0.5f, 0.0f},  {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+
+		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, -0.5f, -0.5f},  {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, 0.5f, -0.5f},   {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, 0.5f, -0.5f},  {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
 	// update: 添加举行的四个顶点为纹理的坐标
 
 	const std::vector<uint16_t> indices = {
-		0, 1, 2, 2, 3, 0
+		0, 1, 2, 2, 3, 0,
+
+		4, 5, 6, 6, 7, 4
 	};
 	VkBuffer	   m_indicesBuffer;
 	VkDeviceMemory m_indicesBufferMemory;
